@@ -1,0 +1,123 @@
+git add . ; git commit -m "lenaring jenkins" ; git push origin master
+
+sudo netstat -lntp
+systemctl status mongod
+
+for i in `ls -dr */` ; do cd $i ; terraform destroy -auto-approve ; cd .. ; done
+
+to un-git
+---------
+rm -rf .git
+
+to get vpn key need sudo su -,thenn cat
+
+JENKINS (t3.small)
+--------
+	Jenkins Redhat Packageaws
+	------------------------
+	sudo su -
+	wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+	rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+	yum install fontconfig java-17-openjdk -y 
+	yum install jenkins -y 
+	systemctl start jenkins 
+	systemctl status jenkins
+	systemctl enable jenkins
+	
+---> take jenkins ec2 id with 8080 to access jenkins <---
+
+Need to install pulug ins
+	- AnsiColor
+	- Pipeline Utility Steps # Need this plugin to get version
+	- Nexus artifact uploader (https://plugins.jenkins.io/nexus-artifact-uploader/)
+	- Rebuilder 
+
+Creating node:
+--------------
+	Remote root directory
+		/home/centos/jenkins-agent (/home/centos/--> is the home directory of agent ec2 instance)
+	Launch method
+		launch agent via SSH
+	Host
+		Private IP address of agent ec2 instance  (because both jenkins and agent ec2 instance are in same VPC)
+	Credentials
+		click on +Add
+			username: centos
+			password: DevOps321
+			ID: ssh-auth
+			description: ssh-auth
+	Host Key Verification Strategy
+		Non verifying verification stategy
+			
+AGENT (t3.small)
+------
+	sudo su 
+	yum install fontconfig java-17-openjdk -y 
+	exit
+	mkdir jenkins-agent
+	
+	Installing terrfrom in agent: (https://developer.hashicorp.com/terraform/tutorials/aws-get-started/install-cli)
+	----------------------------
+	sudo yum install -y yum-utils
+	sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+	sudo yum -y install terraform
+
+	Configuring AWS in Agent (Should Not Do in Root User, Becasue mater using centos)
+	-------------------------
+	aws configure [ find IAM user at C:\Users\Satish\.aws ]
+	
+	Instal nodejs (To instal npm dependecies for catalogue)
+	--------------
+	sudo su
+	dnf module disable nodejs -y
+	dnf module enable nodejs:18 -y 
+	dnf install nodejs -y
+
+
+Nexus (t3.medium with 30 GB storage)(https://help.sonatype.com/en/installation-methods.html)
+---------------------------------
+	Nexus is popular artficat repository (Not for code)
+	Git is popular code repository (Not for Artifacts)
+(t3.medium with 30 GB storage)
+sudo su
+	labauto #command in devops-practice ec2 instance will show all packages in centos 
+	select tool: nexus
+	choose option 2 from list 
+	after installation of nexus 
+		netstat -lntp
+		watch netstat -lntp
+		systemctl status nexus 
+cd ..
+cd nexus/sonatype-work/nexus3/log 
+less nexus.log --> to check status of nexus
+
+--------> take ec2 instance ID with 8081 to acess nexus <----------
+
+
+zip -q -r catalogue.zip ./* -x ".git" -x "*.zip"
+	here 
+		./* means all the files in that directory
+		-x means exclude 
+		-q means quite zip log output 
+	
+SonarQube (t3.medium with 30 GB storage)
+-----------------------------------------
+open SonarQube in supper putty
+	labauto #command in devops-practice ec2 instance will show all packages in centos 
+	select tool: sonarqube (60)
+	
+Public ip:9000 (for browser)
+
+Need to install scaner cli in sonarqube instace via supper putty
+	sudo su -
+	labauto
+	select sonar-scanner (61)
+		cd opt/sonar/bin/conf
+		vim sonar-scanner.properties
+		insert
+		-->	un quote and edit 
+				sonar.host.url=http://private.ip:9000
+				sonar.login=token
+		-->	go to sonarqube account in broser and select token option
+				under gerate token give some nae like jenkins-agent and click generate
+				copy tocken 
